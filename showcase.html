@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>液态玻璃 · 展示页 🍎</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Segoe UI", "Microsoft YaHei", sans-serif;
+    color: #1c1c1e;
+    background:
+      radial-gradient(ellipse at 18% 22%, rgba(94, 200, 255, 0.95) 0%, transparent 45%),
+      radial-gradient(ellipse at 82% 15%, rgba(255, 214, 112, 0.95) 0%, transparent 42%),
+      radial-gradient(ellipse at 12% 85%, rgba(255, 133, 182, 0.9) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 80%, rgba(133, 242, 178, 0.9) 0%, transparent 42%),
+      linear-gradient(135deg, #e8f4ff, #fdeef7 45%, #eaffe9);
+    background-attachment: fixed; overflow: hidden;
+  }
+  .grid {
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .samples { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+  .samples p { position: absolute; color: rgba(28,28,30,0.62); white-space: nowrap; }
+  .s1 { left: 6%;  top: 14%; font-size: 40px; font-weight: 700; }
+  .s2 { left: 56%; top: 30%; font-size: 26px; font-weight: 500; }
+  .s3 { left: 8%;  top: 68%; font-size: 48px; font-weight: 800; }
+  .s4 { left: 60%; top: 80%; font-size: 30px; font-weight: 600; }
+
+  .hero { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 3; pointer-events: none; }
+  .hero h1 { font-size: 27px; font-weight: 750; }
+  .hero p { margin-top: 4px; font-size: 13px; color: rgba(28,28,30,0.55); }
+
+  .stage {
+    position: fixed; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 38px;
+  }
+  .row { display: flex; align-items: center; gap: 26px; }
+
+  .glass {
+    background: rgba(255,255,255,0.08); overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25), 0 -10px 25px inset rgba(0,0,0,0.15);
+  }
+  #capsule {
+    border: 0; cursor: pointer; color: #1c1c1e;
+    width: 330px; height: 92px; border-radius: 999px;
+    font-size: 22px; font-weight: 650;
+    display: grid; place-items: center; user-select: none; touch-action: none;
+    transform-origin: 50% 50%;
+  }
+  .badge { position: absolute; right: 14px; bottom: 8px; font-size: 10.5px; color: rgba(28,28,30,0.42); pointer-events: none; }
+  .item { position: relative; }
+
+  #jellyChip {
+    width: 150px; height: 62px; border-radius: 999px;
+    cursor: pointer; user-select: none; touch-action: none;
+    display: grid; place-items: center; font-size: 14px; font-weight: 600;
+    transform-origin: 50% 50%;
+  }
+  .jelly-timing {
+    width: 250px; pointer-events: none;
+    background: rgba(255,255,255,0.35); border-radius: 14px; padding: 10px 14px 8px;
+    backdrop-filter: blur(8px);
+  }
+  .jelly-timing h4 { font-size: 11.5px; font-weight: 650; color: rgba(28,28,30,0.6); margin-bottom: 4px; }
+  .jelly-timing svg { display: block; width: 100%; height: 34px; }
+  .jelly-timing .bar { height: 4px; border-radius: 2px; background: rgba(28,28,30,0.12); overflow: hidden; margin-top: 6px; }
+  .jelly-timing .bar i { display: block; height: 100%; background: linear-gradient(90deg,#5ec8ff,#ff85b6); transform: scaleX(0); transform-origin: left; }
+
+  #lensA, #lensB {
+    position: fixed; width: 130px; height: 130px; border-radius: 50%;
+    cursor: grab; touch-action: none; user-select: none; z-index: 50;
+  }
+  #lensA { left: calc(50vw - 300px); top: calc(50vh + 110px); }
+  #lensB { left: calc(50vw + 180px); top: calc(50vh - 160px); }
+  #lensA:active, #lensB:active { cursor: grabbing; }
+  .hint { display: grid; place-items: center; height: 100%; font-size: 12px; font-weight: 550; color: rgba(28,28,30,0.5); pointer-events: none; }
+
+  .tip { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 12.5px; color: rgba(28,28,30,0.5); pointer-events: none; z-index: 60; }
+
+  /* ===== 体积光：整个按钮的柔和辉光（贴合轮廓的模糊光晕，无点光源）===== */
+  .vl {
+    position: fixed; z-index: 40; pointer-events: none; opacity: 0;
+    border-radius: 999px;
+    background: radial-gradient(ellipse at 50% 45%,
+      rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.28) 55%, transparent 100%);
+    mix-blend-mode: screen;
+    filter: blur(22px);
+  }
+  .vl.play { animation: vlLife 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes vlLife {
+    0%   { opacity: 0;   transform: scale(0.96); }
+    18%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: scale(1.18); }
+  }
+
+  .lit-glow {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(circle at var(--lx,50%) var(--ly,50%),
+      rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.25) 40%, transparent 70%);
+    opacity: 0; transition: opacity 0.25s; mix-blend-mode: soft-light;
+  }
+  /* 按压增亮层：体积光亮起时按钮表面同步变白 */
+  .press-glow {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(circle at 50% 20%,
+      rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.35) 45%, rgba(255,255,255,0.08) 75%, transparent);
+    mix-blend-mode: screen;
+    opacity: 0; transition: opacity 0.18s;
+  }
+  .press-glow.on { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="samples">
+    <p class="s1">液态玻璃 Liquid Glass</p>
+    <p class="s2">拖动玻璃压过文字看折射</p>
+    <p class="s3">ABC 123 光学扭曲</p>
+    <p class="s4">边缘折射 Edge Refraction</p>
+  </div>
+
+  <div class="hero">
+    <h1>Liquid Glass Showcase</h1>
+    <p>① 按下压扁+体积光 · 按住拖 → 果冻拉伸 · ② 摇晃 500ms · ③ 光晕互相照亮 · ④ 液态折射</p>
+  </div>
+
+  <div class="stage">
+    <div class="row">
+      <div class="item">
+        <button id="capsule" class="glass">按住我，然后甩鼠标 🫳<span class="badge">①果冻拉伸+体积光</span></button>
+      </div>
+      <div class="jelly-timing">
+        <h4>② 果冻摇晃 springEase — 500ms · exp(−5t)·cos(9t)</h4>
+        <svg viewBox="0 0 260 34" preserveAspectRatio="none">
+          <path id="springPath" fill="none" stroke="url(#g1)" stroke-width="2"/>
+          <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#5ec8ff"/><stop offset="1" stop-color="#ff85b6"/></linearGradient></defs>
+        </svg>
+        <div class="bar"><i id="jellyBar"></i></div>
+      </div>
+    </div>
+    <div class="row">
+      <div id="jellyChip" class="glass">点我摇晃 🫧<span class="badge">②余晃</span></div>
+    </div>
+  </div>
+
+  <div id="lensA" class="glass"><span class="hint">拖我 A 💧</span><div class="lit-glow"></div></div>
+  <div id="lensB" class="glass"><span class="hint">拖我 B 💧</span><div class="lit-glow"></div></div>
+
+  <div class="vl" id="vl"></div>
+  <p class="tip">按下 = 果冻被压扁下陷 · 体积光从整个按钮轮廓发出 · 玻璃互相靠近照亮彼此</p>
+
+  <script>
+    /* ============ 原版 shuding/liquid-glass 折射引擎（逐字移植） ============ */
+    'use strict';
+    function smoothStep(a, b, t) { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); }
+    function length(x, y) { return Math.sqrt(x * x + y * y); }
+    function roundedRectSDF(x, y, width, height, radius) {
+      const qx = Math.abs(x) - width + radius;
+      const qy = Math.abs(y) - height + radius;
+      return Math.min(Math.max(qx, qy), 0) + length(Math.max(qx, 0), Math.max(qy, 0)) - radius;
+    }
+    var SVGNS = 'http://www.w3.org/2000/svg', XLINK = 'http://www.w3.org/1999/xlink', _uid = 0;
+
+    function makeGlass(el) {
+      var strength = 1, canvasDPI = 1;
+      var W = el.offsetWidth, H = el.offsetHeight;
+      var fid = 'liquid-glass-' + (++_uid);
+      var svg = document.createElementNS(SVGNS, 'svg');
+      svg.setAttribute('width', '0'); svg.setAttribute('height', '0');
+      svg.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;';
+      var defs = document.createElementNS(SVGNS, 'defs');
+      var filter = document.createElementNS(SVGNS, 'filter');
+      filter.setAttribute('id', fid + '_filter');
+      filter.setAttribute('filterUnits', 'userSpaceOnUse');
+      filter.setAttribute('colorInterpolationFilters', 'sRGB');
+      var feImage = document.createElementNS(SVGNS, 'feImage');
+      feImage.setAttribute('id', fid + '_map');
+      var feDisp = document.createElementNS(SVGNS, 'feDisplacementMap');
+      feDisp.setAttribute('in', 'SourceGraphic'); feDisp.setAttribute('in2', fid + '_map');
+      feDisp.setAttribute('xChannelSelector', 'R'); feDisp.setAttribute('yChannelSelector', 'G');
+      filter.appendChild(feImage); filter.appendChild(feDisp);
+      defs.appendChild(filter); svg.appendChild(defs); document.body.appendChild(svg);
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+
+      function updateShader() {
+        W = Math.max(2, el.offsetWidth); H = Math.max(2, el.offsetHeight);
+        canvas.width = W * canvasDPI; canvas.height = H * canvasDPI;
+        filter.setAttribute('width', String(W)); filter.setAttribute('height', String(H));
+        feImage.setAttribute('width', String(W)); feImage.setAttribute('height', String(H));
+        var w = W * canvasDPI, h = H * canvasDPI;
+        var data = new Uint8ClampedArray(w * h * 4), maxScale = 0, raw = [];
+        for (var i = 0; i < data.length; i += 4) {
+          var x = (i / 4) % w, y = Math.floor(i / 4 / w);
+          var ix = x / w - 0.5, iy = y / h - 0.5;
+          var d = roundedRectSDF(ix, iy, 0.3, 0.2, 0.6);
+          var displacement = smoothStep(0.8, 0, d - 0.15 / strength);
+          var scaled = smoothStep(0, 1, displacement);
+          var dx = (ix * scaled + 0.5) * w - x, dy = (iy * scaled + 0.5) * h - y;
+          maxScale = Math.max(maxScale, Math.abs(dx), Math.abs(dy));
+          raw.push(dx, dy);
+        }
+        maxScale *= 0.5;
+        var j = 0;
+        for (i = 0; i < data.length; i += 4) {
+          data[i] = (raw[j++] / maxScale + 0.5) * 255;
+          data[i + 1] = (raw[j++] / maxScale + 0.5) * 255;
+          data[i + 2] = 0; data[i + 3] = 255;
+        }
+        ctx.putImageData(new ImageData(data, w, h), 0, 0);
+        feImage.setAttributeNS(XLINK, 'href', canvas.toDataURL());
+        feDisp.setAttribute('scale', String(maxScale / canvasDPI));
+        el.style.backdropFilter = 'url(#' + fid + '_filter) blur(0.25px) contrast(1.2) brightness(1.05) saturate(1.1)';
+        el.style.webkitBackdropFilter = el.style.backdropFilter;
+      }
+      updateShader();
+      new ResizeObserver(updateShader).observe(el);
+      return { setStrength: function (s) { strength = s; updateShader(); } };
+    }
+
+    /* ============ 体积光：整个按钮的柔和辉光 ============ */
+    /* 光晕元素完全贴合按钮轮廓（外扩 14%），blur 柔化 → 整面发光而非点光 */
+    var vl = document.getElementById('vl');
+    function emitVolumetricLight(btn) {
+      var r = btn.getBoundingClientRect();
+      var grow = 0.14;
+      vl.style.left = (r.left - r.width * grow / 2) + 'px';
+      vl.style.top = (r.top - r.height * grow / 2) + 'px';
+      vl.style.width = (r.width * (1 + grow)) + 'px';
+      vl.style.height = (r.height * (1 + grow)) + 'px';
+      vl.style.borderRadius = (r.height * 0.75) + 'px';
+      vl.classList.remove('play'); void vl.offsetWidth; vl.classList.add('play');
+    }
+
+    /* ============ 光照互相影响 ============ */
+    var allGlass = [];
+    function setLit(el, cx, cy, intensity) {
+      var g = el._glow;
+      if (intensity <= 0.02) { g.style.opacity = '0'; return; }
+      var r = el.getBoundingClientRect();
+      g.style.setProperty('--lx', ((cx - r.left) / r.width * 100) + '%');
+      g.style.setProperty('--ly', ((cy - r.top) / r.height * 100) + '%');
+      g.style.opacity = intensity.toFixed(2);
+    }
+    function illuminate(srcEl, cx, cy, radius, base) {
+      allGlass.forEach(function (el) {
+        if (el === srcEl) return;
+        var r = el.getBoundingClientRect();
+        var d = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy);
+        setLit(el, cx, cy, base * Math.max(0, 1 - d / radius));
+      });
+    }
+    function attachGlow(el) {
+      var g = document.createElement('div');
+      g.className = 'lit-glow';
+      el.appendChild(g); el._glow = g;
+    }
+
+    /* ============ 果冻动画 ============ */
+    function applyJelly(el, k, deg) {
+      if (!k || k < 0.001) { el.style.transform = ''; return; }
+      el.style.transform = 'rotate(' + deg + 'deg) scale(' + (1 + k) + ',' + (1 - k * 0.45) + ') rotate(' + (-deg) + 'deg)';
+    }
+    function springEase(t) { return 1 - Math.exp(-5 * t) * Math.cos(9 * t); }
+    var jellyRAF = null;
+    function jellyBack(el, from, dur, onDone) {
+      if (jellyRAF) cancelAnimationFrame(jellyRAF);
+      var t0 = performance.now();
+      (function step(now) {
+        var t = Math.min(1, (now - t0) / dur);
+        applyJelly(el, from * (1 - springEase(t)), 0);
+        if (t < 1) jellyRAF = requestAnimationFrame(step);
+        else { jellyRAF = null; el.style.transform = ''; el.style.transformOrigin = '50% 50%'; if (onDone) onDone(); }
+      })(t0);
+    }
+
+    /* ============ ① 胶囊按钮 ============ */
+    /* 按下：压扁下陷（scaleX 变宽 / scaleY 变扁 + 内阴影加深）= 果冻被按瘪 */
+    /* 按住拖：transform-origin 反侧偏移 → 朝指针方向的局部拉伸 */
+    var capsule = document.getElementById('capsule');
+    attachGlow(capsule);
+    var pressGlow = document.createElement('div');
+    pressGlow.className = 'press-glow';
+    capsule.appendChild(pressGlow);
+    var capsuleGlass = makeGlass(capsule);
+    var pressing = false, lastPull = { k: 0 };
+    var REST_SHADOW = '0 4px 8px rgba(0,0,0,0.25), 0 -10px 25px inset rgba(0,0,0,0.15)';
+    /* 下陷感只压底部，不压顶部（顶部被体积光照亮）*/
+    var PRESS_SHADOW = '0 2px 4px rgba(0,0,0,0.28), 0 -10px 25px inset rgba(0,0,0,0.12), inset 0 -8px 16px rgba(0,0,0,0.2)';
+
+    function capsuleTransform(px, py) {
+      var r = capsule.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dx = px - cx, dy = py - cy;
+      var dist = Math.hypot(dx, dy);
+      var ux = dx / (dist || 1), uy = dy / (dist || 1);
+      var k = Math.min(0.14, dist / 900);
+      lastPull.k = Math.max(k, 0.05);
+      // 压扁分量：按住期间始终存在（果冻被手指按住的状态）
+      var sx = 1.05, sy = 0.93;
+      if (dist > 4) {
+        // 局部拉伸：origin 移到指针反侧 → 指针那半边鼓得更多
+        capsule.style.transformOrigin =
+          (50 - ux * 30).toFixed(1) + '% ' + (50 - uy * 30).toFixed(1) + '%';
+        capsule.style.transform =
+          'translate(' + (ux * k * 26).toFixed(1) + 'px,' + (uy * k * 26).toFixed(1) + 'px)' +
+          ' scale(' + ((sx) * (1 + k)).toFixed(3) + ',' + ((sy) * (1 + k * 0.75)).toFixed(3) + ')';
+      } else {
+        capsule.style.transformOrigin = '50% 50%';
+        capsule.style.transform = 'scale(' + sx + ',' + sy + ')';
+      }
+      setLit(capsule, px, py, 0.9);
+      illuminate(capsule, px, py, 700, 0.9);
+    }
+    capsule.addEventListener('pointerdown', function (e) {
+      pressing = true;
+      try { capsule.setPointerCapture(e.pointerId); } catch (_) {}
+      capsuleGlass.setStrength(1.3);
+      capsule.style.boxShadow = PRESS_SHADOW;         // 底部下陷
+      pressGlow.classList.add('on');                  // 表面变白
+      emitVolumetricLight(capsule);                   // 体积光从整个按钮轮廓涌出
+      capsuleTransform(e.clientX, e.clientY);         // 压扁 + 指向指针的局部拉伸
+      e.preventDefault();
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!pressing) return;
+      capsuleTransform(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup', function () {
+      if (!pressing) return;
+      pressing = false;
+      capsuleGlass.setStrength(1);
+      capsule.style.boxShadow = REST_SHADOW;
+      pressGlow.classList.remove('on');
+      allGlass.forEach(function (el) { if (el !== capsule) setLit(el, 0, 0, 0); });
+      jellyBack(capsule, lastPull.k * 1.2, 500);      // 果冻回弹 500ms
+    });
+
+    /* ============ ② 果冻摇晃演示 ============ */
+    var chip = document.getElementById('jellyChip');
+    attachGlow(chip);
+    var chipGlass = makeGlass(chip);
+    chip.addEventListener('pointerdown', function (e) {
+      try { chip.setPointerCapture(e.pointerId); } catch (_) {}
+      chipGlass.setStrength(1.4);
+      illuminate(chip, e.clientX, e.clientY, 420, 0.8);
+      jellyBack(chip, 0.12, 500, function () { chipGlass.setStrength(1); });
+      var bar = document.getElementById('jellyBar');
+      bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
+      void bar.offsetWidth;
+      bar.style.transition = 'transform 500ms linear';
+      bar.style.transform = 'scaleX(0)';
+    });
+    (function drawSpring() {
+      var path = document.getElementById('springPath');
+      var d = '';
+      for (var px = 0; px <= 260; px += 2) {
+        var t = px / 260;
+        var y = 17 - springEase(t) * 14;
+        d += (px ? 'L' : 'M') + px.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+      }
+      path.setAttribute('d', d);
+    })();
+
+    /* ============ ③④ 流体拖拽玻璃 ============ */
+    function fluidFrame(el, vx_, vy_, px, py) {
+      var speed = Math.hypot(vx_, vy_);
+      var k = Math.min(0.16, speed / 420);
+      var deg = speed > 0.5 ? Math.atan2(vy_, vx_) * 180 / Math.PI : 0;
+      applyJelly(el, k, deg);
+      var glow = Math.min(0.85, speed / 26);
+      el.style.boxShadow = REST_SHADOW +
+        ', 0 0 ' + (18 + speed * 2.2) + 'px rgba(255,255,255,' + (0.12 + glow * 0.5).toFixed(2) + ')';
+      illuminate(el, px, py, 460, Math.max(0.25, glow));
+    }
+    function makeFluidDraggable(el, glass) {
+      var st = { on: false, sx: 0, sy: 0, ox: 0, oy: 0, lx: 0, ly: 0, lt: 0, vx: 0, vy: 0, raf: null };
+      el.addEventListener('pointerdown', function (e) {
+        st.on = true;
+        if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null; }
+        st.sx = e.clientX; st.sy = e.clientY;
+        st.ox = el.offsetLeft; st.oy = el.offsetTop;
+        st.lx = e.clientX; st.ly = e.clientY; st.lt = performance.now();
+        st.vx = st.vy = 0;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        glass.setStrength(1.2);
+        e.preventDefault();
+      });
+      window.addEventListener('pointermove', function (e) {
+        if (!st.on) return;
+        el.style.left = (st.ox + e.clientX - st.sx) + 'px';
+        el.style.top = (st.oy + e.clientY - st.sy) + 'px';
+        var now = performance.now();
+        var dt = Math.max(1, now - st.lt);
+        st.vx = st.vx * 0.7 + (e.clientX - st.lx) / dt * 16 * 0.3;
+        st.vy = st.vy * 0.7 + (e.clientY - st.ly) / dt * 16 * 0.3;
+        st.lx = e.clientX; st.ly = e.clientY; st.lt = now;
+        fluidFrame(el, st.vx, st.vy, e.clientX, e.clientY);
+      });
+      function end() {
+        if (!st.on) return;
+        st.on = false;
+        glass.setStrength(1);
+        allGlass.forEach(function (o) { if (o !== el) setLit(o, 0, 0, 0); });
+        if (st.raf) cancelAnimationFrame(st.raf);
+        (function glide() {
+          st.vx *= 0.94; st.vy *= 0.94;
+          el.style.left = (el.offsetLeft + st.vx) + 'px';
+          el.style.top = (el.offsetTop + st.vy) + 'px';
+          var speed = Math.hypot(st.vx, st.vy);
+          if (speed > 0.4) {
+            fluidFrame(el, st.vx, st.vy, el.offsetLeft + el.offsetWidth / 2, el.offsetTop + el.offsetHeight / 2);
+            st.raf = requestAnimationFrame(glide);
+          } else {
+            st.raf = null;
+            el.style.boxShadow = REST_SHADOW;
+            jellyBack(el, Math.min(0.1, speed / 40 + 0.04), 500);
+          }
+        })();
+      }
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+    }
+
+    var lensA = document.getElementById('lensA');
+    var lensB = document.getElementById('lensB');
+    attachGlow(lensA); attachGlow(lensB);
+    var glassA = makeGlass(lensA), glassB = makeGlass(lensB);
+    allGlass = [capsule, chip, lensA, lensB];
+    makeFluidDraggable(lensA, glassA);
+    makeFluidDraggable(lensB, glassB);
+  </script>
+</body>
+</html>
