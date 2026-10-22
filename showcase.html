@@ -3,58 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 小方 · 背景图鉴赏 · 液态玻璃</title>
+<title>AI 小方 · 液态玻璃 · 背景切换</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
   body {
     font-family: -apple-system, "SF Pro Display", "Segoe UI", "Microsoft YaHei", sans-serif;
-    color: #1d1d1f; background: #fbfbfd;
-  }
-  .grid {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-      linear-gradient(rgba(0,0,0,0.1) 1.5px, transparent 1.5px),
-      linear-gradient(90deg, rgba(0,0,0,0.1) 1.5px, transparent 1.5px);
-    background-size: 48px 48px;
+    color: #fff; background: #0b1220;
   }
 
-  /* 顶部玻璃按钮 */
+  /* 背景舞台：三张图叠在一起，靠按钮切 */
+  .stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+  .bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    opacity: 0; transform: scale(1.04);
+    transition: opacity 0.7s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .bg.is-on { opacity: 1; transform: scale(1); }
+  .scrim {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.45) 34%, rgba(0,0,0,0.08) 62%, rgba(0,0,0,0) 78%),
+      linear-gradient(0deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 45%);
+  }
+
+  /* 顶部切换按钮 */
   .topbar {
-    position: sticky; top: 0; z-index: 80;
-    display: flex; justify-content: center; gap: 18px;
-    padding: 18px 0 14px;
-    background: linear-gradient(rgba(251,251,253,0.9), rgba(251,251,253,0));
+    position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
+    z-index: 80; display: flex; gap: 12px;
   }
   .navbtn {
-    border: 0; cursor: pointer; color: #1d1d1f;
-    padding: 13px 30px; border-radius: 999px;
-    font-size: 14.5px; font-weight: 600; letter-spacing: 0.01em;
+    border: 0; cursor: pointer; color: rgba(255,255,255,0.86);
+    padding: 12px 26px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
     user-select: none; touch-action: none; transform-origin: 50% 50%;
-    background: rgba(255,255,255,0.08); overflow: hidden;
+    background: rgba(255,255,255,0.14); overflow: hidden;
     box-shadow: 0 4px 8px rgba(0,0,0,0.22), 0 -8px 20px inset rgba(0,0,0,0.14);
+    transition: color 0.3s ease, background 0.3s ease;
   }
+  .navbtn.is-active { color: #fff; background: rgba(255,255,255,0.34); }
 
-  /* 章节排版 */
-  main { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 30px 24px 140px; }
-  .intro { text-align: center; margin: 46px 0 80px; }
-  .intro h1 { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; }
-  .intro p { margin-top: 14px; font-size: 16px; color: #6e6e73; line-height: 1.75; }
-  section { margin: 96px 0; }
-  section .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #86868b; }
-  section h2 { margin-top: 8px; font-size: 34px; font-weight: 780; letter-spacing: -0.015em; }
-  section .desc { margin-top: 14px; font-size: 15.5px; color: #48484c; line-height: 1.85; max-width: 640px; }
-  section figure { margin-top: 26px; }
-  section img {
-    width: 100%; border-radius: 22px; display: block;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.16);
+  /* 左下文字块 */
+  .panel {
+    position: fixed; left: 6vw; bottom: 12vh; z-index: 20;
+    max-width: 560px; transition: opacity 0.28s ease, transform 0.28s ease;
   }
-  section figcaption { margin-top: 12px; font-size: 12.5px; color: #a1a1a6; text-align: center; }
-  .chips { display: flex; gap: 10px; margin-top: 16px; }
-  .chip { width: 40px; height: 40px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
-  .micro {
-    margin-top: 26px; font-size: 13px; color: #b9b9be; line-height: 1.9;
-    border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 14px;
-  }
+  .panel.is-out { opacity: 0; transform: translateY(8px); }
+  .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.66); }
+  .panel h1 { margin-top: 12px; font-size: clamp(30px, 4.4vw, 52px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+  .panel .desc { margin-top: 16px; font-size: 14.5px; line-height: 1.85; color: rgba(255,255,255,0.82); }
+  .chips { display: flex; gap: 10px; margin-top: 20px; }
+  .chip { width: 38px; height: 38px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); }
+  .micro { margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.8; }
 
   /* 悬浮观察透镜 */
   .lens {
@@ -66,7 +67,7 @@
   }
   .lens:active { cursor: grabbing; }
   #lensA { left: calc(50vw + 150px); top: calc(38vh + 40px); }
-  #lensB { left: calc(50vw - 420px); top: calc(38vh + 60px); width: 260px; height: 96px; border-radius: 999px; }
+  #lensB { left: calc(50vw + 90px); top: calc(18vh); width: 260px; height: 96px; border-radius: 999px; }
   #lensC { left: calc(50vw - 75px);  top: calc(38vh - 130px); width: 110px; height: 110px; }
 
   /* 发光层 */
@@ -107,70 +108,26 @@
 </style>
 </head>
 <body>
-  <div class="grid"></div>
+  <!-- 背景：三张图叠放，按钮切换 -->
+  <div class="stage">
+    <div class="bg is-on" style="background-image:url(bg-1.jpg)"></div>
+    <div class="bg" style="background-image:url(bg-2.jpg)"></div>
+    <div class="bg" style="background-image:url(bg-3.jpg)"></div>
+    <div class="scrim"></div>
+  </div>
 
   <nav class="topbar">
-    <button class="navbtn" data-goto="sec1">🏔️ 雪山云海</button>
-    <button class="navbtn" data-goto="sec2">🍂 金秋森林</button>
-    <button class="navbtn" data-goto="sec3">🌫️ 晨雾山林</button>
+    <button class="navbtn is-active" data-idx="0">🏔️ 雪山云海</button>
+    <button class="navbtn" data-idx="1">🍂 金秋森林</button>
+    <button class="navbtn" data-idx="2">🌫️ 晨雾山林</button>
   </nav>
 
-  <main>
-    <div class="intro">
-      <h1>三张背景图 · 三种折射性格</h1>
-      <p>拖动页面上的圆形透镜和宽胶囊，压过正文与小字，观察文字在玻璃边缘的弯曲错位。<br>右侧抽屉可实时调节折射率、折射圈厚度、圆角、白度与模糊。</p>
-    </div>
-
-    <section id="sec1">
-      <div class="eyebrow">No.1 · Cold &amp; Crisp</div>
-      <h2>雪山云海 · 冷冽蓝白</h2>
-      <p class="desc">高对比的冷色天空与深色山脊是最容易观察折射的背景：亮暗交界的山脊线穿过玻璃边缘时，会被折出一道清晰的弯曲错位，色散镶边在雪白区域也清晰可辨。</p>
-      <figure>
-        <img src="bg-1.jpg" alt="雪山云海">
-        <figcaption>主色 #9db8d9 · #3f5878 · #e8f0f8 —— 高对比折射演示</figcaption>
-      </figure>
-      <div class="chips">
-        <div class="chip" style="background:#9db8d9"></div>
-        <div class="chip" style="background:#3f5878"></div>
-        <div class="chip" style="background:#e8f0f8"></div>
-        <div class="chip" style="background:#5a7ba6"></div>
-      </div>
-      <p class="micro">ABC 123 光学扭曲 · 拖一块玻璃压过这行小字，注意山脊线在玻璃边缘的弯折方向与色散彩边。</p>
-    </section>
-
-    <section id="sec2">
-      <div class="eyebrow">No.2 · Warm &amp; Golden</div>
-      <h2>金秋森林 · 暖橙丁达尔</h2>
-      <p class="desc">最接近 Apple 官方演示场景的暖色素材。斜射的丁达尔光束穿过玻璃时，光会在折射圈里被重新分配，暖橙高光区域放大感最强，树干在边缘处出现最明显的位移。</p>
-      <figure>
-        <img src="bg-2.jpg" alt="金秋森林">
-        <figcaption>主色 #d98e3f · #7a4a1f · #f2d9a8 —— 暖色放大感演示</figcaption>
-      </figure>
-      <div class="chips">
-        <div class="chip" style="background:#d98e3f"></div>
-        <div class="chip" style="background:#7a4a1f"></div>
-        <div class="chip" style="background:#f2d9a8"></div>
-        <div class="chip" style="background:#b87333"></div>
-      </div>
-      <p class="micro">Liquid Glass · 用宽胶囊透镜横扫树干，观察垂直线条的折射错位与边缘厚度。</p>
-    </section>
-
-    <section id="sec3">
-      <div class="eyebrow">No.3 · Misty &amp; Ethereal</div>
-      <h2>晨雾山林 · 青绿空灵</h2>
-      <p class="desc">高雾度低对比背景是折射的"压力测试"：细节稀少时，只有把折射率拉高、折射圈加厚，玻璃的存在感才会回来。适合用右侧抽屉反复对比参数效果。</p>
-      <figure>
-        <img src="bg-3.jpg" alt="晨雾山林">
-        <figcaption>主色 #8fae9c · #4a6657 · #dce8e0 —— 低对比压力测试</figcaption>
-      </figure>
-      <div class="chips">
-        <div class="chip" style="background:#8fae9c"></div>
-        <div class="chip" style="background:#4a6657"></div>
-        <div class="chip" style="background:#dce8e0"></div>
-        <div class="chip" style="background:#6b8f7d"></div>
-      </div>
-      <p class="micro">Refraction Test · 在雾中把折射率滑杆拉到 2.5×，玻璃会重新"显形"。</p>
-    </section>
+  <main class="panel" id="panel">
+    <div class="eyebrow" id="eyebrow">No.1 · Cold &amp; Crisp</div>
+    <h1 id="title">雪山云海 · 冷冽蓝白</h1>
+    <p class="desc" id="desc">高对比的冷色天空与深色山脊是最容易观察折射的背景：亮暗交界的山脊线穿过玻璃边缘时，会被折出一道清晰的弯曲错位，色散镶边在雪白区域也清晰可辨。</p>
+    <div class="chips" id="chips"></div>
+    <p class="micro" id="micro">ABC 123 光学扭曲 · 拖一块玻璃压过这行小字，注意山脊线在玻璃边缘的弯折方向与色散彩边。</p>
   </main>
 
   <!-- 悬浮观察玻璃 -->
@@ -209,7 +166,7 @@
       return Math.min(Math.max(qx, qy), 0) + Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) - r;
     };
 
-    /* 原版引擎 + 可调参数：fragment(0.3, 0.2, rad) + smoothStep(0.8,0,d-depth/edge) */
+    /* 原版引擎 + 可调参数 */
     function makeGlass(el) {
       var strength = 1, W = el.offsetWidth, H = el.offsetHeight;
       var fid = 'lg-' + (++_uid);
@@ -249,7 +206,7 @@
           maxScale = Math.max(maxScale, Math.abs(dx), Math.abs(dy));
           raw.push(dx, dy);
         }
-        maxScale *= 0.5;                                   // 原版同款折半
+        maxScale *= 0.5;
         var idx = 0;
         for (i = 0; i < data.length; i += 4) {
           data[i] = (raw[idx++] / maxScale + 0.5) * 255;
@@ -286,7 +243,7 @@
       });
     }
 
-    /* 果冻（transform 合成层移动，折射全程完整） */
+    /* 果冻 */
     function applyJelly(el, k, deg, tx, ty) {
       tx = tx || 0; ty = ty || 0;
       var t = 'translate3d(' + tx + 'px,' + ty + 'px,0)';
@@ -304,7 +261,7 @@
       })(t0);
     }
 
-    /* 按钮按压：整圈边缘发光 + 压扁 + 体积光 */
+    /* 按钮按压光效 */
     var REST_SHADOW = '0 4px 8px rgba(0,0,0,0.22), 0 -8px 20px inset rgba(0,0,0,0.14)';
     var PRESS_SHADOW = REST_SHADOW +
       ', 0 0 22px 5px rgba(255,255,255,0.9), 0 0 60px 14px rgba(255,255,255,0.45)' +
@@ -322,26 +279,84 @@
       });
     }
 
-    var lensA = document.getElementById('lensA');
-    var lensB = document.getElementById('lensB');
-    var lensC = document.getElementById('lensC');
+    /* 三套背景对应的文案 */
+    var SCENES = [
+      {
+        eyebrow: 'No.1 · Cold & Crisp',
+        title: '雪山云海 · 冷冽蓝白',
+        desc: '高对比的冷色天空与深色山脊是最容易观察折射的背景：亮暗交界的山脊线穿过玻璃边缘时，会被折出一道清晰的弯曲错位，色散镶边在雪白区域也清晰可辨。',
+        chips: ['#9db8d9', '#3f5878', '#e8f0f8', '#5a7ba6'],
+        micro: 'ABC 123 光学扭曲 · 拖一块玻璃压过这行小字，注意山脊线在玻璃边缘的弯折方向与色散彩边。'
+      },
+      {
+        eyebrow: 'No.2 · Warm & Golden',
+        title: '金秋森林 · 暖橙丁达尔',
+        desc: '最接近 Apple 官方演示场景的暖色素材。斜射的丁达尔光束穿过玻璃时，光会在折射圈里被重新分配，暖橙高光区域放大感最强，树干在边缘处出现最明显的位移。',
+        chips: ['#d98e3f', '#7a4a1f', '#f2d9a8', '#b87333'],
+        micro: 'Liquid Glass · 用宽胶囊透镜横扫树干，观察垂直线条的折射错位与边缘厚度。'
+      },
+      {
+        eyebrow: 'No.3 · Misty & Ethereal',
+        title: '晨雾山林 · 青绿空灵',
+        desc: '高雾度低对比背景是折射的压力测试：细节稀少时，只有把折射率拉高、折射圈加厚，玻璃的存在感才会回来。适合用右侧抽屉反复对比参数效果。',
+        chips: ['#8fae9c', '#4a6657', '#dce8e0', '#6b8f7d'],
+        micro: 'Refraction Test · 在雾中把折射率滑杆拉到 2.5×，玻璃会重新显形。'
+      }
+    ];
+
+    var bgs = Array.prototype.slice.call(document.querySelectorAll('.bg'));
     var navBtns = Array.prototype.slice.call(document.querySelectorAll('.navbtn'));
-    var instances = [];
-    function reg(el) {
-      var g = makeGlass(el);
-      allGlass.push({ el: el, g: g });
-      instances.push(g);
-      return g;
-    }
-    navBtns.forEach(function (b) {
-      reg(b);
-      b.addEventListener('click', function () {
-        document.getElementById(b.dataset.goto).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var panel = document.getElementById('panel');
+    var eyebrowEl = document.getElementById('eyebrow');
+    var titleEl = document.getElementById('title');
+    var descEl = document.getElementById('desc');
+    var chipsEl = document.getElementById('chips');
+    var microEl = document.getElementById('micro');
+    var current = 0;
+    var switching = false;
+
+    function paintChips(colors) {
+      chipsEl.innerHTML = '';
+      colors.forEach(function (c) {
+        var d = document.createElement('div');
+        d.className = 'chip';
+        d.style.background = c;
+        chipsEl.appendChild(d);
       });
+    }
+    function applyScene(idx) {
+      var s = SCENES[idx];
+      eyebrowEl.textContent = s.eyebrow;
+      titleEl.textContent = s.title;
+      descEl.textContent = s.desc;
+      microEl.textContent = s.micro;
+      paintChips(s.chips);
+    }
+
+    function switchTo(idx) {
+      if (idx === current || switching) return;
+      switching = true;
+      bgs.forEach(function (b, i) { b.classList.toggle('is-on', i === idx); });
+      navBtns.forEach(function (b, i) { b.classList.toggle('is-active', i === idx); });
+      panel.classList.add('is-out');
+      setTimeout(function () {
+        applyScene(idx);
+        panel.classList.remove('is-out');
+        switching = false;
+      }, 280);
+      current = idx;
+    }
+
+    applyScene(0);
+
+    /* 按钮：只负责切换背景 */
+    navBtns.forEach(function (b) {
+      makeGlass(b);
+      allGlass.push({ el: b, g: null });
+      b.addEventListener('click', function () { switchTo(parseInt(b.dataset.idx, 10)); });
       b.addEventListener('pointerdown', function (e) {
         b.style.boxShadow = PRESS_SHADOW;
         applyJelly(b, 0.1, 0);
-        b._jx = performance.now();
         var r = b.getBoundingClientRect();
         volumeLight(r.left + r.width / 2, r.top + r.height / 2, r.width * 1.3);
         illuminate(b, e.clientX, e.clientY, 600, 1);
@@ -352,9 +367,22 @@
         allGlass.forEach(function (o) { if (o.el !== b) setLit(o.el, 0, 0, 0); });
       });
     });
-    reg(lensA); reg(lensB); reg(lensC);
 
-    /* 透镜流体拖拽（transform 合成层移动） */
+    /* 玻璃元素注册（透镜带发光层） */
+    var lensA = document.getElementById('lensA');
+    var lensB = document.getElementById('lensB');
+    var lensC = document.getElementById('lensC');
+    var lensInstances = [];
+    function reg(el) {
+      var g = makeGlass(el);
+      el._glow = el.querySelector('.lit-glow');
+      allGlass.push({ el: el, g: g });
+      lensInstances.push(g);
+      return g;
+    }
+    var gA = reg(lensA), gB = reg(lensB), gC = reg(lensC);
+
+    /* 透镜拖拽 */
     function makeFluidDraggable(el, inst) {
       var st = { on: false, sx: 0, sy: 0, bx: 0, by: 0, tx: 0, ty: 0, lx: 0, ly: 0, lt: 0, vx: 0, vy: 0, raf: null };
       el.addEventListener('pointerdown', function (e) {
@@ -418,9 +446,9 @@
       window.addEventListener('pointerup', end);
       window.addEventListener('pointercancel', end);
     }
-    makeFluidDraggable(lensA, allGlass[3].g);
-    makeFluidDraggable(lensB, allGlass[4].g);
-    makeFluidDraggable(lensC, allGlass[5].g);
+    makeFluidDraggable(lensA, gA);
+    makeFluidDraggable(lensB, gB);
+    makeFluidDraggable(lensC, gC);
 
     /* 抽屉 */
     var drawer = document.getElementById('drawer');
@@ -433,7 +461,7 @@
       s.addEventListener('input', function () {
         PARAMS[key] = parseFloat(s.value);
         v.textContent = fmt(PARAMS[key]);
-        instances.forEach(function (g) { g.update(); });
+        lensInstances.forEach(function (g) { g.update(); });
       });
       return s;
     }
@@ -453,7 +481,7 @@
       document.getElementById('v-rad').textContent = '0.60';
       document.getElementById('v-tint').textContent = '0.08';
       document.getElementById('v-blur').textContent = '0.25px';
-      instances.forEach(function (g) { g.update(); });
+      lensInstances.forEach(function (g) { g.update(); });
     });
   </script>
 </body>
